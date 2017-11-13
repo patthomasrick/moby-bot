@@ -1,35 +1,48 @@
 import asyncio
 import json
 from email.mime.text import MIMEText
+from queue import Queue
 from random import choice
+from sys import exit
 
 import aiosmtplib
 import discord
 from chatterbot import ChatBot
 from discord.ext.commands import Bot
 
-from settings import read_settings
+from settings import read_settings, create_new_settings
 
 # Discord bot initialization
-client = discord.Client()
+# client = discord.Client()
 description = '''Moby serves to protect, as well as be the host of the hit online series, the
 Adventures of Tim and Moby!'''
 MobyBot = Bot(command_prefix='!', description=description)
 
 # Load settings file
-options = read_settings('settings.txt')
+options = {}
+try:
+    options = read_settings('settings.txt')
+except:
+    create_new_settings()
+    print('Please configure the settings.txt file.')
+    exit()
 
 # "unpack" settings file
-chat_bot_name = options['chat_bot_name']
-bot_token = options['bot_token']
-email_username = options['email_username']
-email_password = options['email_password']
-email_address = options['email_address']
-email_smtp = options['email_smtp']
-email_port = int(options['email_port'])
-cowan_text_gateway = options['cowan_text_gateway']
-client_email = options['client_email']
-client_password = options['client_password']
+chat_bot_name: str = options['chat_bot_name']
+bot_token: str = options['bot_token']
+email_username: str = options['email_username']
+email_password: str = options['email_password']
+email_address: str = options['email_address']
+email_smtp: str = options['email_smtp']
+email_port: int = int(options['email_port'])
+cowan_text_gateway: str = options['cowan_text_gateway']
+client_email: str = options['client_email']
+client_password: str = options['client_password']
+
+yt_player_opts = {
+    'default_search': 'auto',
+}
+yt_player_before_args = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
 
 # init chatterbot
 chatbot = ChatBot(chat_bot_name, trainer='chatterbot.trainers.ChatterBotCorpusTrainer')
@@ -38,26 +51,51 @@ chatbot.train("chatterbot.corpus.english")
 loop = asyncio.get_event_loop()
 
 
-class AnnoyingModeState:
+class BotStates:
     def __init__(self):
-        self.state = False
+        self.annoying_mode = False
+        self.voice_client = None
+        self.player = None
+        self.volume = 1.0
+        self.sound_queue = Queue()
 
 
-annoying_mode_state = AnnoyingModeState()
+bot_states = BotStates()
+
+
+async def jukebox():
+    await MobyBot.wait_until_ready()
+    while not MobyBot.is_closed:
+        await asyncio.sleep(1)  # task runs every n seconds
+        if bot_states.sound_queue.empty():
+            pass
+        elif bot_states.sound_queue.not_empty:
+            if bot_states.player is not None:
+                if bot_states.player.is_done():
+                    url = bot_states.sound_queue.get()
+                    bot_states.player = await bot_states.voice_client.create_ytdl_player(
+                        url=url,
+                        ytdl_options=yt_player_opts,
+                        before_options=yt_player_before_args)
+                    bot_states.player.start()
+
+
+MobyBot.loop.create_task(jukebox())
 
 
 @MobyBot.event
 async def on_ready():
     """
     Runs when the bot joins the server and is ready to respond to requests.
-    Currently, Bonzi just outputs to the console that he is ready.
+    Currently, Moby just outputs to the console that he is ready.
     :return: None
     """
     print('Connected!')
     print('Username: ' + MobyBot.user.name)
     print('ID: ' + MobyBot.user.id)
 
-    await client.login(client_email, client_password)
+    await MobyBot.login(client_email, client_password)
+    await MobyBot.change_presence(game=discord.Game(name='Brainpop.com'))
 
 
 @MobyBot.event
@@ -94,13 +132,53 @@ async def on_message(message):
         #             break
 
         # ensure bot doesn't respond to self in annoyingmode
-        if annoying_mode_state.state and message.author.name != "Moby":
+        if bot_states.annoying_mode and message.author.name != "Moby":
             # get response
             response = chatbot.get_response(message.content)
             print("[Command] ({0}) chat \"{1}\"->\"{2}\"".format(message.author.name,
                                                                  message.content,
                                                                  response))
-            MobyBot.send_message(message.channel, response)
+            return await MobyBot.send_message(message.channel, response)
+
+
+@MobyBot.command(
+    pass_context=True,
+    description="Plays the MLG airhorn noise in the user's current voice channel.")
+async def airhorn(ctx):
+    """
+    Plays the MLG airhorn noise in The Bone Zone.
+    :param ctx: Discord context
+    :return: None
+    """
+    print("[Command] ({0}) airhorn".format(ctx.message.author.name))
+
+    # if not discord.opus.is_loaded():
+    #     print('Opus not loaded.')
+    #     discord.opus.load_opus(ctypes.util.find_library('opus'))
+
+    if ctx.message.author.voice_channel is None:
+        return await MobyBot.say('{0.author.mention} You have to be in a Voice Channel.'.format(ctx.message))
+    elif bot_states.voice_client is None:
+        bot_states.voice_client = await MobyBot.join_voice_channel(ctx.message.author.voice_channel)
+    elif ctx.message.author.voice_channel is not bot_states.voice_client.channel:
+        bot_states.voice_client = await MobyBot.join_voice_channel(ctx.message.author.voice_channel)
+
+    if bot_states.player is not None:
+        if bot_states.player.is_playing():
+            bot_states.sound_queue.put('https://www.youtube.com/watch?v=N30MkO2KcWc')
+            await MobyBot.delete_message(ctx.message)
+            await MobyBot.say('{0.author.mention} Queued - {1}.'.format(ctx.message,
+                                                                        'https://www.youtube.com/watch?v=N30MkO2KcWc'))
+            return None
+
+    bot_states.player = await bot_states.voice_client.create_ytdl_player(
+        url='https://www.youtube.com/watch?v=N30MkO2KcWc',
+        ytdl_options=yt_player_opts,
+        before_options=yt_player_before_args)
+    bot_states.player.start()
+
+    return None
+    # await bot_states.voice_client.disconnect()
 
 
 @MobyBot.command(
@@ -114,13 +192,13 @@ async def annoyingmode(ctx):
     """
     print("[Command] ({0}) annoyingmode".format(ctx.message.author.name))
 
-    if annoying_mode_state.state:
-        annoying_mode_state.state = False
-        return MobyBot.send_message(ctx.message.channel, "Annoying mode off.")
+    if bot_states.annoying_mode:
+        bot_states.annoying_mode = False
+        return await MobyBot.send_message(ctx.message.channel, "Annoying mode off.")
 
     else:
-        annoying_mode_state.state = True
-        return MobyBot.send_message(ctx.message.channel, "Annoying mode on.")
+        bot_states.annoying_mode = True
+        return await MobyBot.send_message(ctx.message.channel, "Annoying mode on.")
 
 
 @MobyBot.command(
@@ -240,6 +318,80 @@ async def joke(ctx):
 
 @MobyBot.command(
     pass_context=True,
+    description="Pauses the currently playing song.")
+async def pause(ctx, *args):
+    """
+    Pauses the currently playing song.
+    :param ctx: Discord context
+    :return: None
+    """
+    if bot_states.player is None:
+        return await MobyBot.say('{0.author.mention} Nothing is playing.'.format(ctx.message))
+    elif bot_states.player.is_done():
+        return await MobyBot.say('{0.author.mention} Nothing is playing.'.format(ctx.message))
+    elif bot_states.player.is_playing():
+        bot_states.player.pause()
+        return None
+
+
+@MobyBot.command(
+    pass_context=True,
+    description="Prints the playlist.")
+async def playlist(ctx, *args):
+    """
+    Prints the playlist
+    :param ctx: Discord context
+    :return: None
+    """
+    return await MobyBot.say('{0.author.mention} {1} songs in queue.'.format(ctx.message,
+                                                                             bot_states.sound_queue.qsize()))
+
+@MobyBot.command(
+    pass_context=True,
+    description="Restart the bot.")
+async def restart(ctx):
+    """
+    Restart the bot.
+    :param ctx: Context
+    :return: None
+    """
+    author = ctx.message.author
+    channel = ctx.message.channel
+
+    print("[Command] ({0}) restart".format(author.name))
+
+    if author.permissions_in(channel).administrator:
+        msg = '{0.author.mention} Restarting.'.format(ctx.message)
+        await MobyBot.send_message(channel, msg)
+
+        MobyBot.close()
+        exit()
+
+    else:
+        msg = '{0.author.mention} Insufficient privllages, scrub.'.format(ctx.message)
+        return await MobyBot.send_message(channel, msg)
+
+
+@MobyBot.command(
+    pass_context=True,
+    description="Resumes the currently paused song.")
+async def resume(ctx, *args):
+    """
+    Resumes the currently paused song.
+    :param ctx: Discord context
+    :return: None
+    """
+    if bot_states.player is None:
+        return await MobyBot.say('{0.author.mention} Nothing is paused.'.format(ctx.message))
+    elif bot_states.player.is_playing():
+        return await MobyBot.say('{0.author.mention} Nothing is paused.'.format(ctx.message))
+    elif not bot_states.player.is_done() and not bot_states.player.is_playing():
+        bot_states.player.resume()
+        return None
+
+
+@MobyBot.command(
+    pass_context=True,
     description="Moby repeats the message word for word and deletes the original command.")
 async def say(ctx, *args):
     """
@@ -261,6 +413,39 @@ async def say(ctx, *args):
 
 @MobyBot.command(
     pass_context=True,
+    description="Give a link to Moby's source code.")
+async def source(ctx):
+    """
+    Give a link to Moby's source code.
+    :param ctx: Context
+    :return: None
+    """
+    print("[Command] ({0}) source".format(ctx.message.author.name))
+
+    msg = '{0.author.mention} Here is my source code: https://github.com/patthomasrick/moby-bot'.format(ctx.message)
+    return await MobyBot.send_message(ctx.message.channel, msg)
+
+
+@MobyBot.command(
+    pass_context=True,
+    description="Stops the current song.")
+async def stop(ctx):
+    """
+    Stops the current song.
+    :param ctx: Discord context
+    :return: None
+    """
+    if bot_states.player is None:
+        return await MobyBot.say('{0.author.mention} Nothing is playing.'.format(ctx.message))
+    elif not bot_states.player.is_playing() and bot_states.player.is_done():
+        return await MobyBot.say('{0.author.mention} Nothing is playing.'.format(ctx.message))
+    else:
+        bot_states.player.stop()
+        return None
+
+
+@MobyBot.command(
+    pass_context=True,
     description="Send Cowan a text!")
 async def tellcowan(ctx, *args):
     """
@@ -275,17 +460,19 @@ async def tellcowan(ctx, *args):
 
     print("[Command] ({0}) tellcowan".format(ctx.message.author.name))
 
-    # init email stuff, connects to the server only when needed
-    smtp = aiosmtplib.SMTP(hostname=email_smtp, port=email_port, loop=loop, use_tls=False)
-    await smtp.connect()
-    await smtp.starttls()
-    await smtp.login(email_username, email_password)
-
     # create message by concatenating string
     text = ' '.join(args)
     message = MIMEText(text)
     message['From'] = email_address
     message['To'] = cowan_text_gateway
+
+    # init email stuff, connects to the server only when needed
+    smtp = aiosmtplib.SMTP(hostname=email_smtp, port=email_port, loop=loop, use_tls=False)
+    await smtp.connect()
+    await smtp.ehlo()
+    await smtp.starttls()
+    await smtp.ehlo()
+    await smtp.login(email_username, email_password)
 
     try:
         if len(message) >= 160:
@@ -299,6 +486,61 @@ async def tellcowan(ctx, *args):
         await MobyBot.say('{0.author.mention} That message is too long.'.format(ctx.message))
 
     smtp.close()
+
+
+@MobyBot.command(
+    pass_context=True,
+    description="Sets the volume of the currently playing song. Volume is from 1-100.")
+async def volume(ctx, *args):
+    """
+    Sets the volume of the currently playing song. Volume is from 1-100.
+    :param ctx: Discord context
+    :return: None
+    """
+    if int(args[0]) <= 0 or int(args[0]) > 100:
+        return await MobyBot.say('{0.author.mention} Volume must be between 0 and 100.'.format(ctx.message))
+
+    else:
+        bot_states.volume = float(args[0]) / 100.0
+        return None
+
+
+@MobyBot.command(
+    pass_context=True,
+    description="Plays the YouTube video's sound. Usage: !ytplay link")
+async def ytplay(ctx, *args):
+    """
+    Plays the YouTube video's sound. Usage: !ytplay link
+    :param ctx: Discord context
+    :return: None
+    """
+    print("[Command] ({0}) ytplay {1}".format(ctx.message.author.name, args[0]))
+
+    if ctx.message.author.voice_channel is None:
+        return await MobyBot.say('{0.author.mention} You have to be in a Voice Channel.'.format(ctx.message))
+    elif bot_states.voice_client is None:
+        bot_states.voice_client = await MobyBot.join_voice_channel(ctx.message.author.voice_channel)
+    elif ctx.message.author.voice_channel is not bot_states.voice_client.channel:
+        bot_states.voice_client = await MobyBot.join_voice_channel(ctx.message.author.voice_channel)
+
+    if bot_states.player is not None:
+        if bot_states.player.is_playing():
+            bot_states.sound_queue.put(args[0])
+            await MobyBot.delete_message(ctx.message)
+            await MobyBot.say('{0.author.mention} Queued - {1}.'.format(ctx.message, args[0]))
+            return None
+
+    bot_states.player = await bot_states.voice_client.create_ytdl_player(
+        url=args[0],
+        ytdl_options=yt_player_opts,
+        before_options=yt_player_before_args)
+    # delete the original message from the context
+    await MobyBot.delete_message(ctx.message)
+    await MobyBot.say('{0.author.mention} Now playing - {1.title}.'.format(ctx.message, bot_states.player))
+    bot_states.player.volume = bot_states.volume
+    bot_states.player.start()
+
+    return None
 
 
 if __name__ == '__main__':

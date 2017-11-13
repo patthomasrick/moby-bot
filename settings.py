@@ -28,9 +28,10 @@ def create_new_settings(path=getcwd()):
     return None
 
 
-def read_settings(f):
+def read_settings(f: str) -> dict:
     """
     Load settings from a file and parse them.
+    :rtype: object
     :param f: path to settings file
     :return: dict of settings
     """
