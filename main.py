@@ -56,7 +56,7 @@ class BotStates:
         self.annoying_mode = False
         self.voice_client = None
         self.player = None
-        self.volume = 1.0
+        self.volume = 0.5
         self.sound_queue = Queue()
 
 
@@ -64,22 +64,38 @@ bot_states = BotStates()
 
 
 async def jukebox():
+    """
+    A simple playlist manager function, designed to run
+    concurrently and constantly.
+    :return: None
+    """
+    # don't start until the bot is logged in
     await MobyBot.wait_until_ready()
+    # only run while the bot is active
     while not MobyBot.is_closed:
         await asyncio.sleep(1)  # task runs every n seconds
         if bot_states.sound_queue.empty():
-            pass
+            pass    # do nothing if there are no songs in the queue
         elif bot_states.sound_queue.not_empty:
+            # continue if there is a player active and there are no songs in the queue
             if bot_states.player is not None:
+                # once the song is done...
                 if bot_states.player.is_done():
+                    # start playing next song in queue
                     url = bot_states.sound_queue.get()
                     bot_states.player = await bot_states.voice_client.create_ytdl_player(
                         url=url,
                         ytdl_options=yt_player_opts,
                         before_options=yt_player_before_args)
                     bot_states.player.start()
+                    # state song change
+                    await MobyBot.say('Now playing - {0.title}.'.format(bot_states.player))
+                    await MobyBot.change_presence(game=discord.Game(name=bot_states.player.title))
+        else:   # otherwise just say that he's on brainpop
+            await MobyBot.change_presence(game=discord.Game(name='Brainpop.com'))
 
 
+# add the looping event to the bot
 MobyBot.loop.create_task(jukebox())
 
 
@@ -94,7 +110,7 @@ async def on_ready():
     print('Username: ' + MobyBot.user.name)
     print('ID: ' + MobyBot.user.id)
 
-    await MobyBot.login(client_email, client_password)
+    await MobyBot.login(bot_token)
     await MobyBot.change_presence(game=discord.Game(name='Brainpop.com'))
 
 
@@ -167,7 +183,7 @@ async def airhorn(ctx):
         if bot_states.player.is_playing():
             bot_states.sound_queue.put('https://www.youtube.com/watch?v=N30MkO2KcWc')
             await MobyBot.delete_message(ctx.message)
-            await MobyBot.say('{0.author.mention} Queued - {1}.'.format(ctx.message,
+            await MobyBot.say('{0.author.mention} Queued - <{1}>.'.format(ctx.message,
                                                                         'https://www.youtube.com/watch?v=N30MkO2KcWc'))
             return None
 
@@ -527,7 +543,7 @@ async def ytplay(ctx, *args):
         if bot_states.player.is_playing():
             bot_states.sound_queue.put(args[0])
             await MobyBot.delete_message(ctx.message)
-            await MobyBot.say('{0.author.mention} Queued - {1}.'.format(ctx.message, args[0]))
+            await MobyBot.say('{0.author.mention} Queued - <{1}>.'.format(ctx.message, args[0]))
             return None
 
     bot_states.player = await bot_states.voice_client.create_ytdl_player(
