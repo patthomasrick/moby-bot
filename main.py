@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# coding: utf-8
+
 import asyncio
 import json
 from email.mime.text import MIMEText
@@ -53,11 +56,14 @@ loop = asyncio.get_event_loop()
 
 class BotStates:
     def __init__(self):
-        self.annoying_mode = False
-        self.voice_client = None
-        self.player = None
-        self.volume = 0.5
-        self.sound_queue = Queue()
+        # states that the bot can be in
+        self.annoying_mode = False      # responding to all messages with !chat?
+        self.voice_client = None        # current voice client for sounds
+        self.player = None              # current sound player
+        self.volume = 0.8               # volume of sound player
+        self.sound_queue = Queue()      # songs queued
+
+        self.locked = False              # admin only mode
 
 
 bot_states = BotStates()
@@ -124,29 +130,12 @@ async def on_message(message):
 
     # do a command
     if message.content.startswith('!'):
-        return await MobyBot.process_commands(message)
+        if not bot_states.locked or message.author.permissions_in(message.channel).administrator:
+            return await MobyBot.process_commands(message)
+        else:
+            return await MobyBot.send_message(message.channel, "Only admins can issue commands right now.")
 
     else:
-        # # cowanify cowan's messages
-        # if message.author.name == "cowrone":
-        #     print("[Trigger] Found message from {0}".format(message.author.name))
-        #     # get the emoji
-        #     emojis = MobyBot.get_all_emojis()
-        #     for e in emojis:
-        #         if e.name == "cowan":
-        #             await MobyBot.add_reaction(message, e)
-        #             break
-        #
-        # # patrickfy patrick's messages
-        # elif message.author.name == "Sillyurs":
-        #     print("[Trigger] Found message from {0}".format(message.author.name))
-        #     # get the emoji
-        #     emojis = MobyBot.get_all_emojis()
-        #     for e in emojis:
-        #         if e.name == "bonzi":
-        #             await MobyBot.add_reaction(message, e)
-        #             break
-
         # ensure bot doesn't respond to self in annoyingmode
         if bot_states.annoying_mode and message.author.name != "Moby":
             # get response
@@ -155,46 +144,6 @@ async def on_message(message):
                                                                  message.content,
                                                                  response))
             return await MobyBot.send_message(message.channel, response)
-
-
-@MobyBot.command(
-    pass_context=True,
-    description="Plays the MLG airhorn noise in the user's current voice channel.")
-async def airhorn(ctx):
-    """
-    Plays the MLG airhorn noise in The Bone Zone.
-    :param ctx: Discord context
-    :return: None
-    """
-    print("[Command] ({0}) airhorn".format(ctx.message.author.name))
-
-    # if not discord.opus.is_loaded():
-    #     print('Opus not loaded.')
-    #     discord.opus.load_opus(ctypes.util.find_library('opus'))
-
-    if ctx.message.author.voice_channel is None:
-        return await MobyBot.say('{0.author.mention} You have to be in a Voice Channel.'.format(ctx.message))
-    elif bot_states.voice_client is None:
-        bot_states.voice_client = await MobyBot.join_voice_channel(ctx.message.author.voice_channel)
-    elif ctx.message.author.voice_channel is not bot_states.voice_client.channel:
-        bot_states.voice_client = await MobyBot.join_voice_channel(ctx.message.author.voice_channel)
-
-    if bot_states.player is not None:
-        if bot_states.player.is_playing():
-            bot_states.sound_queue.put('https://www.youtube.com/watch?v=N30MkO2KcWc')
-            await MobyBot.delete_message(ctx.message)
-            await MobyBot.say('{0.author.mention} Queued - <{1}>.'.format(ctx.message,
-                                                                        'https://www.youtube.com/watch?v=N30MkO2KcWc'))
-            return None
-
-    bot_states.player = await bot_states.voice_client.create_ytdl_player(
-        url='https://www.youtube.com/watch?v=N30MkO2KcWc',
-        ytdl_options=yt_player_opts,
-        before_options=yt_player_before_args)
-    bot_states.player.start()
-
-    return None
-    # await bot_states.voice_client.disconnect()
 
 
 @MobyBot.command(
@@ -330,6 +279,25 @@ async def joke(ctx):
 
         msg = '{0.author.mention}, here\'s one for ya!:\n{1}'.format(ctx.message, j)
         return await MobyBot.send_message(ctx.message.channel, msg, tts=True)
+
+
+@MobyBot.command(
+    pass_context=True,
+    description="Toggles admin lock on Bot.")
+async def lock(ctx):
+    author = ctx.message.author
+    channel = ctx.message.channel
+
+    if author.permissions_in(channel).administrator:
+        bot_states.locked = not bot_states.locked
+        print("[Command] ({0}) lock {1}".format(author.name, bot_states.locked))
+        return await MobyBot.say('{0.author.mention} Admin lock changed to: {1}.'.format(
+            ctx.message, bot_states.locked))
+    else:
+        return await MobyBot.say('{0.author.mention} You don\'t have permissions.'.format(ctx.message))
+
+
+
 
 
 @MobyBot.command(
@@ -532,6 +500,11 @@ async def ytplay(ctx, *args):
     """
     print("[Command] ({0}) ytplay {1}".format(ctx.message.author.name, args[0]))
 
+    # remove playlist info and stuff if present
+    yt_url = args[0]
+    if "&" in yt_url:
+        yt_url = args[0].split("&")[0]
+
     if ctx.message.author.voice_channel is None:
         return await MobyBot.say('{0.author.mention} You have to be in a Voice Channel.'.format(ctx.message))
     elif bot_states.voice_client is None:
@@ -541,13 +514,13 @@ async def ytplay(ctx, *args):
 
     if bot_states.player is not None:
         if bot_states.player.is_playing():
-            bot_states.sound_queue.put(args[0])
+            bot_states.sound_queue.put(yt_url)
             await MobyBot.delete_message(ctx.message)
-            await MobyBot.say('{0.author.mention} Queued - <{1}>.'.format(ctx.message, args[0]))
+            await MobyBot.say('{0.author.mention} Queued - <{1}>.'.format(ctx.message, yt_url))
             return None
 
     bot_states.player = await bot_states.voice_client.create_ytdl_player(
-        url=args[0],
+        url=yt_url,
         ytdl_options=yt_player_opts,
         before_options=yt_player_before_args)
     # delete the original message from the context
@@ -557,6 +530,58 @@ async def ytplay(ctx, *args):
     bot_states.player.start()
 
     return None
+
+
+# here are a bunch of sound clip shortcuts
+@MobyBot.command(
+    pass_context=True,
+    description="Plays the MLG airhorn noise in the user's current voice channel.")
+async def airhorn(ctx):
+    """
+    Plays the MLG airhorn noise in The Bone Zone.
+    :param ctx: Discord context
+    :return: None
+    """
+    print("[Command] ({0}) airhorn".format(ctx.message.author.name))
+
+    intercept = ctx.message
+    intercept.content = "!ytplay https://www.youtube.com/watch?v=N30MkO2KcWc"
+
+    return await MobyBot.process_commands(intercept)
+
+
+@MobyBot.command(
+    pass_context=True,
+    description="Plays the Yee noise in the user's current voice channel.")
+async def yee(ctx):
+    """
+    Plays the MLG airhorn noise in The Bone Zone.
+    :param ctx: Discord context
+    :return: None
+    """
+    print("[Command] ({0}) airhorn".format(ctx.message.author.name))
+
+    intercept = ctx.message
+    intercept.content = "!ytplay https://www.youtube.com/watch?v=q6EoRBvdVPQ"
+
+    return await MobyBot.process_commands(intercept)
+
+
+@MobyBot.command(
+    pass_context=True,
+    description="Plays the Windows noise in the user's current voice channel.")
+async def windows(ctx):
+    """
+    Plays the MLG airhorn noise in The Bone Zone.
+    :param ctx: Discord context
+    :return: None
+    """
+    print("[Command] ({0}) airhorn".format(ctx.message.author.name))
+
+    intercept = ctx.message
+    intercept.content = "!ytplay https://www.youtube.com/watch?v=6Joyj0dmkug"
+
+    return await MobyBot.process_commands(intercept)
 
 
 if __name__ == '__main__':

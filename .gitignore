@@ -106,3 +106,8 @@ venv.bak/
 *.txt
 .idea/
 db.sqlite3
+
+main.build/
+main.dist/
+main.exe
+.directory
