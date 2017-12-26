@@ -31,16 +31,16 @@ except:
     exit()
 
 # "unpack" settings file
-chat_bot_name: str = options['chat_bot_name']
-bot_token: str = options['bot_token']
-email_username: str = options['email_username']
-email_password: str = options['email_password']
-email_address: str = options['email_address']
-email_smtp: str = options['email_smtp']
-email_port: int = int(options['email_port'])
-cowan_text_gateway: str = options['cowan_text_gateway']
-client_email: str = options['client_email']
-client_password: str = options['client_password']
+chat_bot_name = options['chat_bot_name']
+bot_token = options['bot_token']
+email_username = options['email_username']
+email_password = options['email_password']
+email_address = options['email_address']
+email_smtp = options['email_smtp']
+email_port = int(options['email_port'])
+cowan_text_gateway = options['cowan_text_gateway']
+client_email = options['client_email']
+client_password = options['client_password']
 
 yt_player_opts = {
     'default_search': 'auto',
