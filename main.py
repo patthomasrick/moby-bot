@@ -10,7 +10,7 @@ from sys import exit
 
 import aiosmtplib
 import discord
-from chatterbot import ChatBot
+#~ from chatterbot import ChatBot
 from discord.ext.commands import Bot
 
 from settings import read_settings, create_new_settings
@@ -31,7 +31,7 @@ except:
     exit()
 
 # "unpack" settings file
-chat_bot_name = options['chat_bot_name']
+#~ chat_bot_name = options['chat_bot_name']
 bot_token = options['bot_token']
 email_username = options['email_username']
 email_password = options['email_password']
@@ -48,8 +48,8 @@ yt_player_opts = {
 yt_player_before_args = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
 
 # init chatterbot
-chatbot = ChatBot(chat_bot_name, trainer='chatterbot.trainers.ChatterBotCorpusTrainer')
-chatbot.train("chatterbot.corpus.english")
+# chatbot = ChatBot(chat_bot_name, trainer='chatterbot.trainers.ChatterBotCorpusTrainer')
+# chatbot.train("chatterbot.corpus.english")
 
 loop = asyncio.get_event_loop()
 
@@ -135,56 +135,57 @@ async def on_message(message):
         else:
             return await MobyBot.send_message(message.channel, "Only admins can issue commands right now.")
 
-    else:
-        # ensure bot doesn't respond to self in annoyingmode
-        if bot_states.annoying_mode and message.author.name != "Moby":
-            # get response
-            response = chatbot.get_response(message.content)
-            print("[Command] ({0}) chat \"{1}\"->\"{2}\"".format(message.author.name,
-                                                                 message.content,
-                                                                 response))
-            return await MobyBot.send_message(message.channel, response)
+    #~ else:
+        #~ # ensure bot doesn't respond to self in annoyingmode
+        #~ if bot_states.annoying_mode and message.author.name != "Moby":
+			#~ pass
+            #~ # get response
+            #~ response = chatbot.get_response(message.content)
+            #~ print("[Command] ({0}) chat \"{1}\"->\"{2}\"".format(message.author.name,
+                                                                 #~ message.content,
+                                                                 #~ response))
+            #~ return await MobyBot.send_message(message.channel, response)
 
 
-@MobyBot.command(
-    pass_context=True,
-    description="Toggles whether or not Moby will reply to everything in the channel.")
-async def annoyingmode(ctx):
-    """
-    Toggles whether or not Moby will reply to everything in the channel.
-    :param ctx: Discord context
-    :return: None
-    """
-    print("[Command] ({0}) annoyingmode".format(ctx.message.author.name))
+#~ @MobyBot.command(
+    #~ pass_context=True,
+    #~ description="Toggles whether or not Moby will reply to everything in the channel.")
+#~ async def annoyingmode(ctx):
+    #~ """
+    #~ Toggles whether or not Moby will reply to everything in the channel.
+    #~ :param ctx: Discord context
+    #~ :return: None
+    #~ """
+    #~ print("[Command] ({0}) annoyingmode".format(ctx.message.author.name))
 
-    if bot_states.annoying_mode:
-        bot_states.annoying_mode = False
-        return await MobyBot.send_message(ctx.message.channel, "Annoying mode off.")
+    #~ if bot_states.annoying_mode:
+        #~ bot_states.annoying_mode = False
+        #~ return await MobyBot.send_message(ctx.message.channel, "Annoying mode off.")
 
-    else:
-        bot_states.annoying_mode = True
-        return await MobyBot.send_message(ctx.message.channel, "Annoying mode on.")
+    #~ else:
+        #~ bot_states.annoying_mode = True
+        #~ return await MobyBot.send_message(ctx.message.channel, "Annoying mode on.")
 
 
-@MobyBot.command(
-    pass_context=True,
-    description="Send a message to Moby's chat bot feature.")
-async def chat(ctx, *args):
-    """
-    Send a message to Moby's chat bot feature.
-    :param ctx: Discord context
-    :param args: all text following !chat
-    :return: None
-    """
-    # create the string message
-    msg = ' '.join(args)
-    # get response
-    response = chatbot.get_response(msg)
+#~ @MobyBot.command(
+    #~ pass_context=True,
+    #~ description="Send a message to Moby's chat bot feature.")
+#~ async def chat(ctx, *args):
+    #~ """
+    #~ Send a message to Moby's chat bot feature.
+    #~ :param ctx: Discord context
+    #~ :param args: all text following !chat
+    #~ :return: None
+    #~ """
+    #~ # create the string message
+    #~ msg = ' '.join(args)
+    #~ # get response
+    #~ response = chatbot.get_response(msg)
 
-    print("[annoyingmode] ({0}) chat \"{1}\"->\"{2}\"".format(ctx.message.author.name, msg, response))
+    #~ print("[annoyingmode] ({0}) chat \"{1}\"->\"{2}\"".format(ctx.message.author.name, msg, response))
 
-    # Moby speaks
-    return await MobyBot.say(response)
+    #~ # Moby speaks
+    #~ return await MobyBot.say(response)
 
 
 @MobyBot.command(
