@@ -136,7 +136,7 @@ async def on_message(message):
     #~ else:
         #~ # ensure bot doesn't respond to self in annoyingmode
         #~ if bot_states.annoying_mode and message.author.name != "Moby":
-			#~ pass
+            #~ pass
             #~ # get response
             #~ response = chatbot.get_response(message.content)
             #~ print("[Command] ({0}) chat \"{1}\"->\"{2}\"".format(message.author.name,
@@ -291,10 +291,10 @@ async def joke(ctx):
     pass_context=True,
     description="Toggles admin lock on the bot.")
 async def lock(ctx):
-	"""
-	Toggles admin lock on the bot.
-	Usage: !lock
-	"""
+    """
+    Toggles admin lock on the bot.
+    Usage: !lock
+    """
     author = ctx.message.author
     channel = ctx.message.channel
 
