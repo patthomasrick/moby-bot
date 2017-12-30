@@ -7,10 +7,9 @@ Requires:
     -	PyNaCl
     -   YoutubeDL
 -   aiosmtplib
--   chatterbot
 
 All of which can be installed via pip:
-```
+```bash
 sudo apt install ffmpeg  
-pip3 install discord aiosmtplib chatterbot pynacl youtube_dl
+pip3 install discord aiosmtplib pynacl youtube_dl
 ```
