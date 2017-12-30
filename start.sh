@@ -7,7 +7,7 @@ cd /
 cd $BOT_PATH
 
 while [ true ]
-do
+    do
     python3 main.py
     sleep 5
 done
