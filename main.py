@@ -151,7 +151,7 @@ async def annoyingmode(ctx):
     """
     Toggles whether or not Moby will reply to everything in the channel.
     Usage: !annoyingmode
-    
+
     :param ctx: Discord context
     :return: None
     """
@@ -172,7 +172,7 @@ async def annoyingmode(ctx):
 async def chat(ctx, *args):
     """
     Send a message to Moby's chat bot feature.
-    
+
     :param ctx: Discord context
     :param args: all text following !chat
     :return: None
@@ -211,7 +211,7 @@ async def email(ctx, *args):
     """
     Send an email from Moby.
     Usage: !email email@email.com words in message
-    
+
     :param ctx: Context
     :param args: Everything following the command, which is put into a MIME-formatted email.
     :return: None
@@ -253,7 +253,7 @@ async def hello(ctx):
     """
     Say hi to Moby and Moby says hi back.
     Usage: !hello
-    
+
     :param ctx: Context
     :return: None
     """
@@ -270,7 +270,7 @@ async def joke(ctx):
     """
     Tell a random joke. Quality not assured.
     Usage: !joke
-    
+
     :param ctx: Context
     :return: None
     """
@@ -293,10 +293,10 @@ async def joke(ctx):
     pass_context=True,
     description="Toggles admin lock on the bot.")
 async def lock(ctx):
-	"""
-	Toggles admin lock on the bot.
-	Usage: !lock
-	"""
+    """
+    Toggles admin lock on the bot.
+    Usage: !lock
+    """
     author = ctx.message.author
     channel = ctx.message.channel
 
@@ -320,7 +320,7 @@ async def pause(ctx, *args):
     Pauses the currently playing song.
     Usage: !pause
     A song must be playing for this to work.
-    
+
     :param ctx: Discord context
     :return: None
     """
@@ -338,7 +338,7 @@ async def playlist(ctx, *args):
     """
     Sends how many songs are queued to chat.
     Usage: !playlist
-    
+
     :param ctx: Discord context
     :return: None
     """
@@ -352,7 +352,7 @@ async def restart(ctx):
     """
     Exits the Python program and restarts the script.
     Usage: !restart
-    
+
     :param ctx: Context
     :return: None
     """
@@ -381,7 +381,7 @@ async def resume(ctx, *args):
     Resumes the currently paused song.
     Usage: !resume
     A song must be queued for this to work.
-    
+
     :param ctx: Discord context
     :return: None
     """
@@ -401,7 +401,7 @@ async def say(ctx, *args):
     """
     Everything after the command is repeated by Moby and the original message is deleted.
     Usage: !say Words here are repeated.
-    
+
     :param ctx: Context
     :param args: all text after command
     :return: None
@@ -424,7 +424,7 @@ async def source(ctx):
     """
     Link Moby's source code.
     Usage: !source
-    
+
     :param ctx: Context
     :return: None
     """
@@ -442,7 +442,7 @@ async def stop(ctx):
     Stops the current song.
     Usage: !stop
     A song must be playing.
-    
+
     :param ctx: Discord context
     :return: None
     """
@@ -464,7 +464,7 @@ async def tellcowan(ctx, *args):
     Connects to the AOL.com SMTP server, logs in, formats the email, sends the email to the
     text gateway for Cowan, and Sprint sends Cowan a text containing the email's content.
     Usage: !tellcowan Everything here is sent to Cowan.
-    
+
     :param ctx: Context
     :param args: Everything following the command, which is echoed.
         Should be of the form {word1} {word2} ... {wordn}
@@ -524,9 +524,9 @@ async def volume(ctx, *args):
     description="Plays the YouTube video's sound. Usage: !ytplay link")
 async def ytplay(ctx, *args):
     """
-    Plays the YouTube video's sound. 
+    Plays the YouTube video's sound.
     Usage: !ytplay link
-    
+
     :param ctx: Discord context
     :return: None
     """
@@ -573,7 +573,7 @@ async def airhorn(ctx):
     Plays the MLG airhorn noise in the user's current voice channel.
     Usage: !airhorn
     User must be in a voice channel.
-    
+
     :param ctx: Discord context
     :return: None
     """
@@ -593,7 +593,7 @@ async def yee(ctx):
     Plays the Yee noise in the user's current voice channel.
     Usage: !yee
     User must be in a voice channel.
-    
+
     :param ctx: Discord context
     :return: None
     """
@@ -613,7 +613,7 @@ async def windows(ctx):
     Plays the Windows noise in the user's current voice channel.
     Usage: !windows
     User must be in a voice channel.
-    
+
     :param ctx: Discord context
     :return: None
     """
