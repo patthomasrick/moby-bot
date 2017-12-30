@@ -42,9 +42,7 @@ cowan_text_gateway = options['cowan_text_gateway']
 client_email = options['client_email']
 client_password = options['client_password']
 
-yt_player_opts = {
-    'default_search': 'auto',
-}
+yt_player_opts = {'default_search': 'auto'}
 yt_player_before_args = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
 
 # init chatterbot
@@ -152,6 +150,8 @@ async def on_message(message):
 async def annoyingmode(ctx):
     """
     Toggles whether or not Moby will reply to everything in the channel.
+    Usage: !annoyingmode
+    
     :param ctx: Discord context
     :return: None
     """
@@ -172,6 +172,7 @@ async def annoyingmode(ctx):
 async def chat(ctx, *args):
     """
     Send a message to Moby's chat bot feature.
+    
     :param ctx: Discord context
     :param args: all text following !chat
     :return: None
@@ -189,10 +190,11 @@ async def chat(ctx, *args):
 
 @MobyBot.command(
     pass_context=True,
-    description="Choose between multiple choices separated by spaces.")
+    description="Randomly select one of the following options separated by spaces.")
 async def choose(ctx, *choices: str):
     """
-    Choose between multiple choices
+    Choose between multiple choices separated by spaces.
+    Usage: !choice choice1 choice2 choice3 ... choicen
     :param ctx: Discord context
     :param choices: words following the command
     :return: None
@@ -204,10 +206,12 @@ async def choose(ctx, *choices: str):
 
 @MobyBot.command(
     pass_context=True,
-    description="Send an email from Moby. Usage: !email email@email.com message")
+    description="Send an email from Moby. Usage: !email email@email.com words in message")
 async def email(ctx, *args):
     """
-    Send an email from Moby. Usage: !email email@email.com message
+    Send an email from Moby.
+    Usage: !email email@email.com words in message
+    
     :param ctx: Context
     :param args: Everything following the command, which is put into a MIME-formatted email.
     :return: None
@@ -244,10 +248,12 @@ async def email(ctx, *args):
 
 @MobyBot.command(
     pass_context=True,
-    description="Say hello back to people.")
+    description="Say hi to Moby and Moby says hi back.")
 async def hello(ctx):
     """
-    Say hello back to people.
+    Say hi to Moby and Moby says hi back.
+    Usage: !hello
+    
     :param ctx: Context
     :return: None
     """
@@ -259,10 +265,12 @@ async def hello(ctx):
 
 @MobyBot.command(
     pass_context=True,
-    description="Tell a random joke from the big list.")
+    description="Tell a random joke. Quality not assured.")
 async def joke(ctx):
     """
-    Tell a random joke from the big list.
+    Tell a random joke. Quality not assured.
+    Usage: !joke
+    
     :param ctx: Context
     :return: None
     """
@@ -283,8 +291,12 @@ async def joke(ctx):
 
 @MobyBot.command(
     pass_context=True,
-    description="Toggles admin lock on Bot.")
+    description="Toggles admin lock on the bot.")
 async def lock(ctx):
+	"""
+	Toggles admin lock on the bot.
+	Usage: !lock
+	"""
     author = ctx.message.author
     channel = ctx.message.channel
 
@@ -306,12 +318,13 @@ async def lock(ctx):
 async def pause(ctx, *args):
     """
     Pauses the currently playing song.
+    Usage: !pause
+    A song must be playing for this to work.
+    
     :param ctx: Discord context
     :return: None
     """
-    if bot_states.player is None:
-        return await MobyBot.say('{0.author.mention} Nothing is playing.'.format(ctx.message))
-    elif bot_states.player.is_done():
+    if (bot_states.player is None) or bot_states.player.is_done():
         return await MobyBot.say('{0.author.mention} Nothing is playing.'.format(ctx.message))
     elif bot_states.player.is_playing():
         bot_states.player.pause()
@@ -320,10 +333,12 @@ async def pause(ctx, *args):
 
 @MobyBot.command(
     pass_context=True,
-    description="Prints the playlist.")
+    description="Sends how many songs are queued to chat.")
 async def playlist(ctx, *args):
     """
-    Prints the playlist
+    Sends how many songs are queued to chat.
+    Usage: !playlist
+    
     :param ctx: Discord context
     :return: None
     """
@@ -332,10 +347,12 @@ async def playlist(ctx, *args):
 
 @MobyBot.command(
     pass_context=True,
-    description="Restart the bot.")
+    description="Restarts the bot.")
 async def restart(ctx):
     """
-    Restart the bot.
+    Exits the Python program and restarts the script.
+    Usage: !restart
+    
     :param ctx: Context
     :return: None
     """
@@ -362,6 +379,9 @@ async def restart(ctx):
 async def resume(ctx, *args):
     """
     Resumes the currently paused song.
+    Usage: !resume
+    A song must be queued for this to work.
+    
     :param ctx: Discord context
     :return: None
     """
@@ -371,15 +391,17 @@ async def resume(ctx, *args):
         return await MobyBot.say('{0.author.mention} Nothing is paused.'.format(ctx.message))
     elif not bot_states.player.is_done() and not bot_states.player.is_playing():
         bot_states.player.resume()
-        return None
+        return await MobyBot.say('{0.author.mention} Resumed playback.'.format(ctx.message))
 
 
 @MobyBot.command(
     pass_context=True,
-    description="Moby repeats the message word for word and deletes the original command.")
+    description="Everything after the command is repeated by Moby and the original message is deleted.")
 async def say(ctx, *args):
     """
-    Moby repeats the message word for word and deletes the original command.
+    Everything after the command is repeated by Moby and the original message is deleted.
+    Usage: !say Words here are repeated.
+    
     :param ctx: Context
     :param args: all text after command
     :return: None
@@ -397,10 +419,12 @@ async def say(ctx, *args):
 
 @MobyBot.command(
     pass_context=True,
-    description="Give a link to Moby's source code.")
+    description="Link Moby's source code.")
 async def source(ctx):
     """
-    Give a link to Moby's source code.
+    Link Moby's source code.
+    Usage: !source
+    
     :param ctx: Context
     :return: None
     """
@@ -416,6 +440,9 @@ async def source(ctx):
 async def stop(ctx):
     """
     Stops the current song.
+    Usage: !stop
+    A song must be playing.
+    
     :param ctx: Discord context
     :return: None
     """
@@ -425,7 +452,7 @@ async def stop(ctx):
         return await MobyBot.say('{0.author.mention} Nothing is playing.'.format(ctx.message))
     else:
         bot_states.player.stop()
-        return None
+        return await MobyBot.say('{0.author.mention} Playback stopped.'.format(ctx.message))
 
 
 @MobyBot.command(
@@ -436,9 +463,11 @@ async def tellcowan(ctx, *args):
     Send Cowan a text!
     Connects to the AOL.com SMTP server, logs in, formats the email, sends the email to the
     text gateway for Cowan, and Sprint sends Cowan a text containing the email's content.
+    Usage: !tellcowan Everything here is sent to Cowan.
+    
     :param ctx: Context
-    :param args: Everything following the command, which is echoed back to the chat.
-        Should be of the form {email} {word1} {word2} ... {wordn}
+    :param args: Everything following the command, which is echoed.
+        Should be of the form {word1} {word2} ... {wordn}
     :return: None
     """
 
@@ -477,7 +506,8 @@ async def tellcowan(ctx, *args):
     description="Sets the volume of the currently playing song. Volume is from 1-100.")
 async def volume(ctx, *args):
     """
-    Sets the volume of the currently playing song. Volume is from 1-100.
+    Sets the volume of the currently playing song. Volume is from 0-100.
+    Usage: !volume (number between 0 and 100)
     :param ctx: Discord context
     :return: None
     """
@@ -486,7 +516,7 @@ async def volume(ctx, *args):
 
     else:
         bot_states.volume = float(args[0]) / 100.0
-        return None
+        return await MobyBot.say('{0.author.mention} Set volume to {1}.'.format(ctx.message, args[0]))
 
 
 @MobyBot.command(
@@ -494,7 +524,9 @@ async def volume(ctx, *args):
     description="Plays the YouTube video's sound. Usage: !ytplay link")
 async def ytplay(ctx, *args):
     """
-    Plays the YouTube video's sound. Usage: !ytplay link
+    Plays the YouTube video's sound. 
+    Usage: !ytplay link
+    
     :param ctx: Discord context
     :return: None
     """
@@ -538,7 +570,10 @@ async def ytplay(ctx, *args):
     description="Plays the MLG airhorn noise in the user's current voice channel.")
 async def airhorn(ctx):
     """
-    Plays the MLG airhorn noise in The Bone Zone.
+    Plays the MLG airhorn noise in the user's current voice channel.
+    Usage: !airhorn
+    User must be in a voice channel.
+    
     :param ctx: Discord context
     :return: None
     """
@@ -555,7 +590,10 @@ async def airhorn(ctx):
     description="Plays the Yee noise in the user's current voice channel.")
 async def yee(ctx):
     """
-    Plays the MLG airhorn noise in The Bone Zone.
+    Plays the Yee noise in the user's current voice channel.
+    Usage: !yee
+    User must be in a voice channel.
+    
     :param ctx: Discord context
     :return: None
     """
@@ -572,7 +610,10 @@ async def yee(ctx):
     description="Plays the Windows noise in the user's current voice channel.")
 async def windows(ctx):
     """
-    Plays the MLG airhorn noise in The Bone Zone.
+    Plays the Windows noise in the user's current voice channel.
+    Usage: !windows
+    User must be in a voice channel.
+    
     :param ctx: Discord context
     :return: None
     """
