@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # coding: utf-8
 
 import asyncio
@@ -43,7 +42,7 @@ client_email = options['client_email']
 client_password = options['client_password']
 
 yt_player_opts = {'default_search': 'auto'}
-yt_player_before_args = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
+yt_player_before_args = "-reconnect 1"
 
 # init chatterbot
 chatbot = ChatBot(chat_bot_name, trainer='chatterbot.trainers.ChatterBotCorpusTrainer')
@@ -55,13 +54,13 @@ loop = asyncio.get_event_loop()
 class BotStates:
     def __init__(self):
         # states that the bot can be in
-        self.annoying_mode = False      # responding to all messages with !chat?
-        self.voice_client = None        # current voice client for sounds
-        self.player = None              # current sound player
-        self.volume = 0.8               # volume of sound player
-        self.sound_queue = Queue()      # songs queued
+        self.annoying_mode = False  # responding to all messages with !chat?
+        self.voice_client = None  # current voice client for sounds
+        self.player = None  # current sound player
+        self.volume = 0.8  # volume of sound player
+        self.sound_queue = Queue()  # songs queued
 
-        self.locked = False              # admin only mode
+        self.locked = False  # admin only mode
 
 
 bot_states = BotStates()
@@ -79,7 +78,7 @@ async def jukebox():
     while not MobyBot.is_closed:
         await asyncio.sleep(1)  # task runs every n seconds
         if bot_states.sound_queue.empty():
-            pass    # do nothing if there are no songs in the queue
+            pass  # do nothing if there are no songs in the queue
         elif bot_states.sound_queue.not_empty:
             # continue if there is a player active and there are no songs in the queue
             if bot_states.player is not None:
@@ -95,7 +94,7 @@ async def jukebox():
                     # state song change
                     await MobyBot.say('Now playing - {0.title}.'.format(bot_states.player))
                     await MobyBot.change_presence(game=discord.Game(name=bot_states.player.title))
-        else:   # otherwise just say that he's on brainpop
+        else:  # otherwise just say that he's on brainpop
             await MobyBot.change_presence(game=discord.Game(name='Brainpop.com'))
 
 
@@ -309,9 +308,6 @@ async def lock(ctx):
         return await MobyBot.say('{0.author.mention} You don\'t have permissions.'.format(ctx.message))
 
 
-
-
-
 @MobyBot.command(
     pass_context=True,
     description="Pauses the currently playing song.")
@@ -344,6 +340,7 @@ async def playlist(ctx, *args):
     """
     return await MobyBot.say('{0.author.mention} {1} songs in queue.'.format(ctx.message,
                                                                              bot_states.sound_queue.qsize()))
+
 
 @MobyBot.command(
     pass_context=True,
