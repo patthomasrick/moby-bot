@@ -3,6 +3,11 @@
 
 BOT_PATH=home/pi/moby-bot
 
+# reload environment
+hash -r
+
+sleep 5
+
 cd /
 cd $BOT_PATH
 
