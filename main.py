@@ -10,61 +10,26 @@ from sys import exit
 
 import aiosmtplib
 import discord
-#~ from chatterbot import ChatBot
+# ~ from chatterbot import ChatBot
 from discord.ext.commands import Bot
 
 from settings import read_settings, create_new_settings
 
-# Discord bot initialization
-# client = discord.Client()
 description = '''Moby serves to protect, as well as be the host of the hit online series, the
 Adventures of Tim and Moby!'''
 MobyBot = Bot(command_prefix='!', description=description)
-
-# Load settings file
-options = {}
-try:
-    options = read_settings('settings.txt')
-except:
-    create_new_settings()
-    print('Please configure the settings.txt file.')
-    exit()
-
-# "unpack" settings file
-#~ chat_bot_name = options['chat_bot_name']
-bot_token = options['bot_token']
-email_username = options['email_username']
-email_password = options['email_password']
-email_address = options['email_address']
-email_smtp = options['email_smtp']
-email_port = int(options['email_port'])
-cowan_text_gateway = options['cowan_text_gateway']
-client_email = options['client_email']
-client_password = options['client_password']
-
-yt_player_opts = {'default_search': 'auto'}
-yt_player_before_args = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
-
-# init chatterbot
-# chatbot = ChatBot(chat_bot_name, trainer='chatterbot.trainers.ChatterBotCorpusTrainer')
-# chatbot.train("chatterbot.corpus.english")
-
-loop = asyncio.get_event_loop()
 
 
 class BotStates:
     def __init__(self):
         # states that the bot can be in
-        self.annoying_mode = False      # responding to all messages with !chat?
-        self.voice_client = None        # current voice client for sounds
-        self.player = None              # current sound player
-        self.volume = 0.8               # volume of sound player
-        self.sound_queue = Queue()      # songs queued
+        self.annoying_mode = False  # responding to all messages with !chat?
+        self.voice_client = None  # current voice client for sounds
+        self.player = None  # current sound player
+        self.volume = 0.8  # volume of sound player
+        self.sound_queue = Queue()  # songs queued
 
-        self.locked = False              # admin only mode
-
-
-bot_states = BotStates()
+        self.locked = False  # admin only mode
 
 
 async def jukebox():
@@ -73,13 +38,17 @@ async def jukebox():
     concurrently and constantly.
     :return: None
     """
+
     # don't start until the bot is logged in
     await MobyBot.wait_until_ready()
+
     # only run while the bot is active
     while not MobyBot.is_closed:
-        await asyncio.sleep(1)  # task runs every n seconds
+        await asyncio.sleep(2)  # task runs every n seconds
+
         if bot_states.sound_queue.empty():
-            pass    # do nothing if there are no songs in the queue
+            pass  # do nothing if there are no songs in the queue
+
         elif bot_states.sound_queue.not_empty:
             # continue if there is a player active and there are no songs in the queue
             if bot_states.player is not None:
@@ -95,12 +64,9 @@ async def jukebox():
                     # state song change
                     await MobyBot.say('Now playing - {0.title}.'.format(bot_states.player))
                     await MobyBot.change_presence(game=discord.Game(name=bot_states.player.title))
-        else:   # otherwise just say that he's on brainpop
+
+        else:  # otherwise just say that he's on brainpop
             await MobyBot.change_presence(game=discord.Game(name='Brainpop.com'))
-
-
-# add the looping event to the bot
-MobyBot.loop.create_task(jukebox())
 
 
 @MobyBot.event
@@ -133,57 +99,57 @@ async def on_message(message):
         else:
             return await MobyBot.send_message(message.channel, "Only admins can issue commands right now.")
 
-    #~ else:
-        #~ # ensure bot doesn't respond to self in annoyingmode
-        #~ if bot_states.annoying_mode and message.author.name != "Moby":
-            #~ pass
-            #~ # get response
-            #~ response = chatbot.get_response(message.content)
-            #~ print("[Command] ({0}) chat \"{1}\"->\"{2}\"".format(message.author.name,
-                                                                 #~ message.content,
-                                                                 #~ response))
-            #~ return await MobyBot.send_message(message.channel, response)
+    # ~ else:
+    # ~ # ensure bot doesn't respond to self in annoyingmode
+    # ~ if bot_states.annoying_mode and message.author.name != "Moby":
+    # ~ pass
+    # ~ # get response
+    # ~ response = chatbot.get_response(message.content)
+    # ~ print("[Command] ({0}) chat \"{1}\"->\"{2}\"".format(message.author.name,
+    # ~ message.content,
+    # ~ response))
+    # ~ return await MobyBot.send_message(message.channel, response)
 
 
-#~ @MobyBot.command(
-    #~ pass_context=True,
-    #~ description="Toggles whether or not Moby will reply to everything in the channel.")
-#~ async def annoyingmode(ctx):
-    #~ """
-    #~ Toggles whether or not Moby will reply to everything in the channel.
-    #~ :param ctx: Discord context
-    #~ :return: None
-    #~ """
-    #~ print("[Command] ({0}) annoyingmode".format(ctx.message.author.name))
+# ~ @MobyBot.command(
+# ~ pass_context=True,
+# ~ description="Toggles whether or not Moby will reply to everything in the channel.")
+# ~ async def annoyingmode(ctx):
+# ~ """
+# ~ Toggles whether or not Moby will reply to everything in the channel.
+# ~ :param ctx: Discord context
+# ~ :return: None
+# ~ """
+# ~ print("[Command] ({0}) annoyingmode".format(ctx.message.author.name))
 
-    #~ if bot_states.annoying_mode:
-        #~ bot_states.annoying_mode = False
-        #~ return await MobyBot.send_message(ctx.message.channel, "Annoying mode off.")
+# ~ if bot_states.annoying_mode:
+# ~ bot_states.annoying_mode = False
+# ~ return await MobyBot.send_message(ctx.message.channel, "Annoying mode off.")
 
-    #~ else:
-        #~ bot_states.annoying_mode = True
-        #~ return await MobyBot.send_message(ctx.message.channel, "Annoying mode on.")
+# ~ else:
+# ~ bot_states.annoying_mode = True
+# ~ return await MobyBot.send_message(ctx.message.channel, "Annoying mode on.")
 
 
-#~ @MobyBot.command(
-    #~ pass_context=True,
-    #~ description="Send a message to Moby's chat bot feature.")
-#~ async def chat(ctx, *args):
-    #~ """
-    #~ Send a message to Moby's chat bot feature.
-    #~ :param ctx: Discord context
-    #~ :param args: all text following !chat
-    #~ :return: None
-    #~ """
-    #~ # create the string message
-    #~ msg = ' '.join(args)
-    #~ # get response
-    #~ response = chatbot.get_response(msg)
+# ~ @MobyBot.command(
+# ~ pass_context=True,
+# ~ description="Send a message to Moby's chat bot feature.")
+# ~ async def chat(ctx, *args):
+# ~ """
+# ~ Send a message to Moby's chat bot feature.
+# ~ :param ctx: Discord context
+# ~ :param args: all text following !chat
+# ~ :return: None
+# ~ """
+# ~ # create the string message
+# ~ msg = ' '.join(args)
+# ~ # get response
+# ~ response = chatbot.get_response(msg)
 
-    #~ print("[annoyingmode] ({0}) chat \"{1}\"->\"{2}\"".format(ctx.message.author.name, msg, response))
+# ~ print("[annoyingmode] ({0}) chat \"{1}\"->\"{2}\"".format(ctx.message.author.name, msg, response))
 
-    #~ # Moby speaks
-    #~ return await MobyBot.say(response)
+# ~ # Moby speaks
+# ~ return await MobyBot.say(response)
 
 
 @MobyBot.command(
@@ -307,13 +273,10 @@ async def lock(ctx):
         return await MobyBot.say('{0.author.mention} You don\'t have permissions.'.format(ctx.message))
 
 
-
-
-
 @MobyBot.command(
     pass_context=True,
     description="Pauses the currently playing song.")
-async def pause(ctx, *args):
+async def pause(ctx):
     """
     Pauses the currently playing song.
     Usage: !pause
@@ -332,7 +295,7 @@ async def pause(ctx, *args):
 @MobyBot.command(
     pass_context=True,
     description="Sends how many songs are queued to chat.")
-async def playlist(ctx, *args):
+async def playlist(ctx):
     """
     Sends how many songs are queued to chat.
     Usage: !playlist
@@ -342,6 +305,7 @@ async def playlist(ctx, *args):
     """
     return await MobyBot.say('{0.author.mention} {1} songs in queue.'.format(ctx.message,
                                                                              bot_states.sound_queue.qsize()))
+
 
 @MobyBot.command(
     pass_context=True,
@@ -374,7 +338,7 @@ async def restart(ctx):
 @MobyBot.command(
     pass_context=True,
     description="Resumes the currently paused song.")
-async def resume(ctx, *args):
+async def resume(ctx):
     """
     Resumes the currently paused song.
     Usage: !resume
@@ -624,4 +588,43 @@ async def windows(ctx):
 
 
 if __name__ == '__main__':
+
+    # Discord bot initialization
+    # client = discord.Client()
+
+    # Load settings file
+    options = {}
+
+    # noinspection PyBroadException
+    try:
+        options = read_settings('settings.txt')
+    except:
+        create_new_settings()
+        print('Please configure the settings.txt file.')
+        exit()
+
+    # "unpack" settings file
+    # ~ chat_bot_name = options['chat_bot_name']
+    bot_token = options['bot_token']
+    email_username = options['email_username']
+    email_password = options['email_password']
+    email_address = options['email_address']
+    email_smtp = options['email_smtp']
+    email_port = int(options['email_port'])
+    cowan_text_gateway = options['cowan_text_gateway']
+    client_email = options['client_email']
+    client_password = options['client_password']
+
+    yt_player_opts = {'default_search': 'auto'}
+    yt_player_before_args = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
+
+    # init chatterbot
+    # chatbot = ChatBot(chat_bot_name, trainer='chatterbot.trainers.ChatterBotCorpusTrainer')
+    # chatbot.train("chatterbot.corpus.english")
+
+    loop = asyncio.get_event_loop()
+
+    bot_states = BotStates()
+    # add the looping event to the bot
+    MobyBot.loop.create_task(jukebox())
     MobyBot.run(bot_token)
