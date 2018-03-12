@@ -1,72 +1,23 @@
-#!/usr/bin/env python3
 # coding: utf-8
 
-import asyncio
 import json
 from email.mime.text import MIMEText
-from queue import Queue
 from random import choice
 from sys import exit
 
 import aiosmtplib
-import discord
-# ~ from chatterbot import ChatBot
 from discord.ext.commands import Bot
 
+from bot_states import *
+from jukebox import *
 from settings import read_settings, create_new_settings
 
-description = '''Moby serves to protect, as well as be the host of the hit online series, the
+__DESCRIPTION = '''Moby serves to protect, as well as be the host of the hit online series, the
 Adventures of Tim and Moby!'''
-MobyBot = Bot(command_prefix='!', description=description)
+__VERSION = (1, 0, 0)
 
-
-class BotStates:
-    def __init__(self):
-        # states that the bot can be in
-        self.annoying_mode = False  # responding to all messages with !chat?
-        self.voice_client = None  # current voice client for sounds
-        self.player = None  # current sound player
-        self.volume = 0.8  # volume of sound player
-        self.sound_queue = Queue()  # songs queued
-
-        self.locked = False  # admin only mode
-
-
-async def jukebox():
-    """
-    A simple playlist manager function, designed to run
-    concurrently and constantly.
-    :return: None
-    """
-
-    # don't start until the bot is logged in
-    await MobyBot.wait_until_ready()
-
-    # only run while the bot is active
-    while not MobyBot.is_closed:
-        await asyncio.sleep(2)  # task runs every n seconds
-
-        if bot_states.sound_queue.empty():
-            pass  # do nothing if there are no songs in the queue
-
-        elif bot_states.sound_queue.not_empty:
-            # continue if there is a player active and there are no songs in the queue
-            if bot_states.player is not None:
-                # once the song is done...
-                if bot_states.player.is_done():
-                    # start playing next song in queue
-                    url = bot_states.sound_queue.get()
-                    bot_states.player = await bot_states.voice_client.create_ytdl_player(
-                        url=url,
-                        ytdl_options=yt_player_opts,
-                        before_options=yt_player_before_args)
-                    bot_states.player.start()
-                    # state song change
-                    await MobyBot.say('Now playing - {0.title}.'.format(bot_states.player))
-                    await MobyBot.change_presence(game=discord.Game(name=bot_states.player.title))
-
-        else:  # otherwise just say that he's on brainpop
-            await MobyBot.change_presence(game=discord.Game(name='Brainpop.com'))
+# Create the Bot
+MobyBot = Bot(command_prefix='!', description=__DESCRIPTION)
 
 
 @MobyBot.event
@@ -623,6 +574,6 @@ if __name__ == '__main__':
 
     bot_states = BotStates()
     # add the looping event to the bot
-    MobyBot.loop.create_task(jukebox())
+    MobyBot.loop.create_task(jukebox(MobyBot, bot_states, yt_player_opts, yt_player_before_args))
 
     MobyBot.run(bot_token)
