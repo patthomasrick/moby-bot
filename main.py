@@ -426,6 +426,7 @@ async def version(ctx):
     print("[Command] ({0}) version".format(ctx.message.author.name))
     await MobyBot.say('{0.author.mention} Current bot version: {1[0]}.{1[1]}.{1[2]}.'.format(ctx.message, __VERSION))
 
+
 @MobyBot.command(
     pass_context=True,
     description="Sets the volume of the currently playing song. Volume is from 1-100.")
@@ -575,7 +576,9 @@ if __name__ == '__main__':
     # client_email = options['client_email']
     # client_password = options['client_password']
 
-    yt_player_opts = {'default_search': 'auto'}
+    yt_player_opts = {
+        'default_search': 'auto'
+    }
     yt_player_before_args = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
 
     # init chatterbot
@@ -584,8 +587,8 @@ if __name__ == '__main__':
 
     loop = asyncio.get_event_loop()
 
-    bot_states = BotStates()
     # add the looping event to the bot
+    bot_states = BotStates()
     MobyBot.loop.create_task(jukebox(MobyBot, bot_states, yt_player_opts, yt_player_before_args))
 
     MobyBot.run(bot_token)
