@@ -14,7 +14,7 @@ from settings import read_settings, create_new_settings
 
 __DESCRIPTION = '''Moby serves to protect, as well as be the host of the hit online series, the
 Adventures of Tim and Moby!'''
-__VERSION = (1, 0, 0)
+__VERSION = (1, 0, 1)
 
 # Create the Bot
 MobyBot = Bot(command_prefix='!', description=__DESCRIPTION)
@@ -413,6 +413,18 @@ async def tellcowan(ctx, *args):
 
     smtp.close()
 
+
+@MobyBot.command(
+    pass_context=True,
+    description="Reports the current version.")
+async def version(ctx):
+    """
+    Prints the current version.
+    :param ctx:
+    :return:
+    """
+    print("[Command] ({0}) version".format(ctx.message.author.name))
+    await MobyBot.say('{0.author.mention} Current bot version: {1[0]}.{1[1]}.{1[2]}.'.format(ctx.message, __VERSION))
 
 @MobyBot.command(
     pass_context=True,
