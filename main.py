@@ -589,9 +589,6 @@ async def windows(ctx):
 
 if __name__ == '__main__':
 
-    # Discord bot initialization
-    # client = discord.Client()
-
     # Load settings file
     options = {}
 
@@ -612,8 +609,8 @@ if __name__ == '__main__':
     email_smtp = options['email_smtp']
     email_port = int(options['email_port'])
     cowan_text_gateway = options['cowan_text_gateway']
-    client_email = options['client_email']
-    client_password = options['client_password']
+    # client_email = options['client_email']
+    # client_password = options['client_password']
 
     yt_player_opts = {'default_search': 'auto'}
     yt_player_before_args = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
@@ -627,4 +624,5 @@ if __name__ == '__main__':
     bot_states = BotStates()
     # add the looping event to the bot
     MobyBot.loop.create_task(jukebox())
+
     MobyBot.run(bot_token)
