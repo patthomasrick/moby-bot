@@ -1,6 +1,7 @@
 # coding: utf-8
 
 import json
+import logging as log
 from email.mime.text import MIMEText
 from random import choice
 from sys import exit
@@ -14,10 +15,23 @@ from settings import read_settings, create_new_settings
 
 __DESCRIPTION = '''Moby serves to protect, as well as be the host of the hit online series, the
 Adventures of Tim and Moby!'''
-__VERSION = (1, 0, 1)
+__VERSION = (1, 0, 2)
 
 # Create the Bot
 MobyBot = Bot(command_prefix='!', description=__DESCRIPTION)
+
+# Create logger
+LOGGER = log.getLogger()
+LOGGER.setLevel(log.DEBUG)
+HANDLER = log.FileHandler(filename='moby.log', encoding='utf-8', mode='w')
+HANDLER.setFormatter(log.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+LOGGER.addHandler(HANDLER)
+
+D_LOGGER = log.getLogger('discord')
+D_LOGGER.setLevel(log.DEBUG)
+D_HANDLER = log.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+D_HANDLER.setFormatter(log.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+D_LOGGER.addHandler(D_HANDLER)
 
 
 @MobyBot.event
@@ -34,6 +48,8 @@ async def on_ready():
     await MobyBot.login(bot_token)
     await MobyBot.change_presence(game=discord.Game(name='Brainpop.com'))
 
+    LOGGER.info("Connected to Discord: Username={0}, ID={1}".format(MobyBot.user.name, MobyBot.user.id))
+
 
 @MobyBot.event
 async def on_message(message):
@@ -43,64 +59,14 @@ async def on_message(message):
     :return: none
     """
 
+    LOGGER.info("{0} sent a message".format(message.author.name))
+
     # do a command
     if message.content.startswith('!'):
         if not bot_states.locked or message.author.permissions_in(message.channel).administrator:
             return await MobyBot.process_commands(message)
         else:
             return await MobyBot.send_message(message.channel, "Only admins can issue commands right now.")
-
-    # ~ else:
-    # ~ # ensure bot doesn't respond to self in annoyingmode
-    # ~ if bot_states.annoying_mode and message.author.name != "Moby":
-    # ~ pass
-    # ~ # get response
-    # ~ response = chatbot.get_response(message.content)
-    # ~ print("[Command] ({0}) chat \"{1}\"->\"{2}\"".format(message.author.name,
-    # ~ message.content,
-    # ~ response))
-    # ~ return await MobyBot.send_message(message.channel, response)
-
-
-# ~ @MobyBot.command(
-# ~ pass_context=True,
-# ~ description="Toggles whether or not Moby will reply to everything in the channel.")
-# ~ async def annoyingmode(ctx):
-# ~ """
-# ~ Toggles whether or not Moby will reply to everything in the channel.
-# ~ :param ctx: Discord context
-# ~ :return: None
-# ~ """
-# ~ print("[Command] ({0}) annoyingmode".format(ctx.message.author.name))
-
-# ~ if bot_states.annoying_mode:
-# ~ bot_states.annoying_mode = False
-# ~ return await MobyBot.send_message(ctx.message.channel, "Annoying mode off.")
-
-# ~ else:
-# ~ bot_states.annoying_mode = True
-# ~ return await MobyBot.send_message(ctx.message.channel, "Annoying mode on.")
-
-
-# ~ @MobyBot.command(
-# ~ pass_context=True,
-# ~ description="Send a message to Moby's chat bot feature.")
-# ~ async def chat(ctx, *args):
-# ~ """
-# ~ Send a message to Moby's chat bot feature.
-# ~ :param ctx: Discord context
-# ~ :param args: all text following !chat
-# ~ :return: None
-# ~ """
-# ~ # create the string message
-# ~ msg = ' '.join(args)
-# ~ # get response
-# ~ response = chatbot.get_response(msg)
-
-# ~ print("[annoyingmode] ({0}) chat \"{1}\"->\"{2}\"".format(ctx.message.author.name, msg, response))
-
-# ~ # Moby speaks
-# ~ return await MobyBot.say(response)
 
 
 @MobyBot.command(
@@ -115,6 +81,7 @@ async def choose(ctx, *choices: str):
     :return: None
     """
     print("[Command] ({0}) choices {1}".format(ctx.message.author.name, choices))
+    LOGGER.info("[Command] ({0}) choices {1}".format(ctx.message.author.name, choices))
 
     return await MobyBot.say(choice(choices))
 
@@ -133,6 +100,7 @@ async def email(ctx, *args):
     """
 
     print("[Command] ({0}) email".format(ctx.message.author.name))
+    LOGGER.info("[Command] ({0}) email".format(ctx.message.author.name))
 
     # create message by concatenating string
     text = ' '.join(args[1:])
@@ -173,6 +141,7 @@ async def hello(ctx):
     :return: None
     """
     print("[Command] ({0}) hello".format(ctx.message.author.name))
+    LOGGER.info("[Command] ({0}) hello".format(ctx.message.author.name))
 
     msg = 'Hello {0.author.mention}'.format(ctx.message)
     return await MobyBot.send_message(ctx.message.channel, msg)
@@ -191,6 +160,7 @@ async def joke(ctx):
     """
 
     print("[Command] ({0}) joke".format(ctx.message.author.name))
+    LOGGER.info("[Command] ({0}) joke".format(ctx.message.author.name))
 
     with open('jokes.json') as f:
         jokes = json.load(f)
@@ -212,8 +182,11 @@ async def lock(ctx):
     Toggles admin lock on the bot.
     Usage: !lock
     """
+
     author = ctx.message.author
     channel = ctx.message.channel
+
+    LOGGER.info("[Command] ({0}) lock in channel {1}".format(author, channel))
 
     if author.permissions_in(channel).administrator:
         bot_states.locked = not bot_states.locked
@@ -221,6 +194,7 @@ async def lock(ctx):
         return await MobyBot.say('{0.author.mention} Admin lock changed to: {1}.'.format(
             ctx.message, bot_states.locked))
     else:
+        LOGGER.info("[Command] ({0}) permission to lock denied".format(author))
         return await MobyBot.say('{0.author.mention} You don\'t have permissions.'.format(ctx.message))
 
 
@@ -236,9 +210,13 @@ async def pause(ctx):
     :param ctx: Discord context
     :return: None
     """
+
     if (bot_states.player is None) or bot_states.player.is_done():
+        LOGGER.info(
+            "[Command] ({0}) tried to stop jukebox when there was nothing playing".format(ctx.message.author.name))
         return await MobyBot.say('{0.author.mention} Nothing is playing.'.format(ctx.message))
     elif bot_states.player.is_playing():
+        LOGGER.info("[Command] ({0}) stopped jukebox".format(ctx.message.author.name))
         bot_states.player.pause()
         return None
 
@@ -254,6 +232,8 @@ async def playlist(ctx):
     :param ctx: Discord context
     :return: None
     """
+    LOGGER.info("[Command] ({0}) jukebox queue size".format(ctx.message.author.name))
+
     return await MobyBot.say('{0.author.mention} {1} songs in queue.'.format(ctx.message,
                                                                              bot_states.sound_queue.qsize()))
 
@@ -278,11 +258,15 @@ async def restart(ctx):
         msg = '{0.author.mention} Restarting.'.format(ctx.message)
         await MobyBot.send_message(channel, msg)
 
+        LOGGER.info("[Command] ({0}) admin issued restart".format(ctx.message.author.name))
+
         MobyBot.close()
         exit()
 
     else:
         msg = '{0.author.mention} Insufficient privllages, scrub.'.format(ctx.message)
+
+        LOGGER.info("[Command] ({0}) restart denied".format(ctx.message.author.name))
         return await MobyBot.send_message(channel, msg)
 
 
@@ -298,11 +282,13 @@ async def resume(ctx):
     :param ctx: Discord context
     :return: None
     """
-    if bot_states.player is None:
+
+    if (bot_states.player is None) or (bot_states.player.is_playing()):
+        LOGGER.info("[Command] ({0}) tried to resume a song when not possible".format(ctx.message.author.name))
         return await MobyBot.say('{0.author.mention} Nothing is paused.'.format(ctx.message))
-    elif bot_states.player.is_playing():
-        return await MobyBot.say('{0.author.mention} Nothing is paused.'.format(ctx.message))
+
     elif not bot_states.player.is_done() and not bot_states.player.is_playing():
+        LOGGER.info("[Command] ({0}) resumed jukebox".format(ctx.message.author.name))
         bot_states.player.resume()
         return await MobyBot.say('{0.author.mention} Resumed playback.'.format(ctx.message))
 
@@ -321,6 +307,7 @@ async def say(ctx, *args):
     """
 
     print("[Command] ({0}) say".format(ctx.message.author.name))
+    LOGGER.info("[Command] ({0}) say".format(ctx.message.author.name))
 
     # create message by concatenating string
     msg = ' '.join(args)
@@ -342,6 +329,7 @@ async def source(ctx):
     :return: None
     """
     print("[Command] ({0}) source".format(ctx.message.author.name))
+    LOGGER.info("[Command] ({0}) source".format(ctx.message.author.name))
 
     msg = '{0.author.mention} Here is my source code: https://github.com/patthomasrick/moby-bot'.format(ctx.message)
     return await MobyBot.send_message(ctx.message.channel, msg)
@@ -359,12 +347,12 @@ async def stop(ctx):
     :param ctx: Discord context
     :return: None
     """
-    if bot_states.player is None:
-        return await MobyBot.say('{0.author.mention} Nothing is playing.'.format(ctx.message))
-    elif not bot_states.player.is_playing() and bot_states.player.is_done():
+    if (bot_states.player is None) or not (bot_states.player.is_playing() and bot_states.player.is_done()):
+        LOGGER.info("[Command] ({0}) tried to stop jukebox when not possible".format(ctx.message.author.name))
         return await MobyBot.say('{0.author.mention} Nothing is playing.'.format(ctx.message))
     else:
         bot_states.player.stop()
+        LOGGER.info("[Command] ({0}) stopped jukebox".format(ctx.message.author.name))
         return await MobyBot.say('{0.author.mention} Playback stopped.'.format(ctx.message))
 
 
@@ -385,6 +373,7 @@ async def tellcowan(ctx, *args):
     """
 
     print("[Command] ({0}) tellcowan".format(ctx.message.author.name))
+    LOGGER.info("[Command] ({0}) tellcowan".format(ctx.message.author.name))
 
     # create message by concatenating string
     text = ' '.join(args)
@@ -406,9 +395,14 @@ async def tellcowan(ctx, *args):
         else:
             await smtp.send_message(message)
             await MobyBot.say('{0.author.mention} Text sent.'.format(ctx.message))
+            LOGGER.info("[Command] ({0}) text successfully sent".format(ctx.message.author.name))
+
     except aiosmtplib.SMTPException:
+        LOGGER.warning("[Command] ({0}) SMTPException".format(ctx.message.author.name))
         await MobyBot.say('{0.author.mention} Failed to send text/email.'.format(ctx.message))
+
     except IndexError:
+        LOGGER.warning("[Command] ({0}) message is too long".format(ctx.message.author.name))
         await MobyBot.say('{0.author.mention} That message is too long.'.format(ctx.message))
 
     smtp.close()
@@ -424,6 +418,8 @@ async def version(ctx):
     :return:
     """
     print("[Command] ({0}) version".format(ctx.message.author.name))
+    LOGGER.info("[Command] ({0}) version".format(ctx.message.author.name))
+
     await MobyBot.say('{0.author.mention} Current bot version: {1[0]}.{1[1]}.{1[2]}.'.format(ctx.message, __VERSION))
 
 
@@ -438,9 +434,11 @@ async def volume(ctx, *args):
     :return: None
     """
     if int(args[0]) <= 0 or int(args[0]) > 100:
+        LOGGER.info("[Command] ({0}) tried to set invalid volume".format(ctx.message.author.name))
         return await MobyBot.say('{0.author.mention} Volume must be between 0 and 100.'.format(ctx.message))
 
     else:
+        LOGGER.info("[Command] ({0}) set volume".format(ctx.message.author.name))
         bot_states.volume = float(args[0]) / 100.0
         return await MobyBot.say('{0.author.mention} Set volume to {1}.'.format(ctx.message, args[0]))
 
@@ -457,6 +455,7 @@ async def ytplay(ctx, *args):
     :return: None
     """
     print("[Command] ({0}) ytplay {1}".format(ctx.message.author.name, args[0]))
+    LOGGER.info("[Command] ({0}) ytplay {1}".format(ctx.message.author.name, args[0]))
 
     # remove playlist info and stuff if present
     yt_url = args[0]
@@ -559,7 +558,9 @@ if __name__ == '__main__':
     # noinspection PyBroadException
     try:
         options = read_settings('settings.txt')
+        LOGGER.info("Settings successfully read")
     except:
+        LOGGER.error("Settings file invalid")
         create_new_settings()
         print('Please configure the settings.txt file.')
         exit()
